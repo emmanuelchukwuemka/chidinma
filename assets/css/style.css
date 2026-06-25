@@ -1,0 +1,129 @@
+body {
+    background-color: #f4f6f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar {
+    min-height: 100vh;
+    background-color: #1a5c2a;
+    padding-top: 20px;
+}
+
+.sidebar a {
+    color: #ffffff;
+    text-decoration: none;
+    display: block;
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background 0.3s;
+}
+
+.sidebar a:hover {
+    background-color: #28a745;
+}
+
+.sidebar a.active {
+    background-color: #28a745;
+    font-weight: bold;
+}
+
+.main-content {
+    padding: 30px;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+    font-weight: bold;
+}
+
+.stat-card {
+    border-radius: 15px;
+    padding: 25px;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.stat-card h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.stat-card p {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.bg-stat-1 { background: linear-gradient(135deg, #28a745, #1a5c2a); }
+.bg-stat-2 { background: linear-gradient(135deg, #007bff, #0056b3); }
+.bg-stat-3 { background: linear-gradient(135deg, #ffc107, #e0a800); }
+.bg-stat-4 { background: linear-gradient(135deg, #dc3545, #a71d2a); }
+
+.table th {
+    background-color: #1a5c2a;
+    color: white;
+}
+
+.btn-success {
+    background-color: #1a5c2a;
+    border-color: #1a5c2a;
+}
+
+.btn-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a5c2a, #28a745);
+}
+
+.login-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.login-card h2 {
+    color: #1a5c2a;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.progress {
+    height: 10px;
+    border-radius: 10px;
+}
+
+.badge-pending { background-color: #ffc107; color: #000; }
+.badge-progress { background-color: #007bff; }
+.badge-completed { background-color: #28a745; }
+
+.notification-item {
+    padding: 15px;
+    border-left: 4px solid #28a745;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.notification-item.unread {
+    border-left-color: #dc3545;
+    background-color: #fff5f5;
+}
