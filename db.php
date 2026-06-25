@@ -23,7 +23,7 @@ function _initDb(PDO $pdo): void {
                            CHECK (role IN ("admin","manager","supervisor","team_member")),
             status     TEXT NOT NULL DEFAULT "active"
                            CHECK (status IN ("active","inactive")),
-            created_at TEXT DEFAULT (datetime("now"))
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS programs (
             program_id  INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -34,7 +34,7 @@ function _initDb(PDO $pdo): void {
             manager_id  INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
             status      TEXT NOT NULL DEFAULT "active"
                             CHECK (status IN ("active","completed","inactive")),
-            created_at  TEXT DEFAULT (datetime("now"))
+            created_at  TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS activities (
             activity_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +45,7 @@ function _initDb(PDO $pdo): void {
             deadline    TEXT,
             status      TEXT NOT NULL DEFAULT "pending"
                             CHECK (status IN ("pending","in_progress","completed")),
-            created_at  TEXT DEFAULT (datetime("now"))
+            created_at  TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS milestones (
             milestone_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,7 +54,7 @@ function _initDb(PDO $pdo): void {
             target_date  TEXT,
             status       TEXT NOT NULL DEFAULT "not_achieved"
                              CHECK (status IN ("not_achieved","achieved")),
-            created_at   TEXT DEFAULT (datetime("now"))
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS evaluations (
             evaluation_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,7 +62,7 @@ function _initDb(PDO $pdo): void {
             supervisor_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
             score         INTEGER NOT NULL,
             feedback      TEXT,
-            evaluated_at  TEXT DEFAULT (datetime("now"))
+            evaluated_at  TEXT DEFAULT CURRENT_TIMESTAMP
         );
         CREATE TABLE IF NOT EXISTS notifications (
             notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +70,7 @@ function _initDb(PDO $pdo): void {
             message         TEXT NOT NULL,
             type            TEXT DEFAULT "general",
             is_read         INTEGER DEFAULT 0,
-            created_at      TEXT DEFAULT (datetime("now"))
+            created_at      TEXT DEFAULT CURRENT_TIMESTAMP
         );
     ');
 
