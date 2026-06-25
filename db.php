@@ -1,5 +1,5 @@
 <?php
-$db_path = __DIR__ . '/database/outreach.db';
+$db_path = sys_get_temp_dir() . '/outreach.db';
 
 try {
     $pdo = new PDO('sqlite:' . $db_path, null, null, [
