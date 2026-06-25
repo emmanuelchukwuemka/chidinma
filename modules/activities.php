@@ -12,17 +12,11 @@ $error = '';
 $role = $_SESSION['role'];
 
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_activity'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $description = mysqli_real_escape_string($conn, $_POST['description']);
-    $program_id = (int)$_POST['program_id'];
-    $assigned_to = (int)$_POST['assigned_to'];
-    $deadline = $_POST['deadline'];
-
-    $query = "INSERT INTO activities (title, description, program_id, assigned_to, deadline) VALUES ('$title', '$description', '$program_id', '$assigned_to', '$deadline')";
-    if(mysqli_query($conn, $query)) {
-        // Create notification
-        $msg = "You have been assigned a new activity: $title";
-        mysqli_query($conn, "INSERT INTO notifications (user_id, message, type) VALUES ('$assigned_to', '$msg', 'deadline')");
+    $stmt = $pdo->prepare("INSERT INTO activities (title, description, program_id, assigned_to, deadline) VALUES (?, ?, ?, ?, ?)");
+    if($stmt->execute([$_POST['title'], $_POST['description'], (int)$_POST['program_id'], (int)$_POST['assigned_to'], $_POST['deadline']])) {
+        $assigned_to = (int)$_POST['assigned_to'];
+        $msg = "You have been assigned a new activity: " . $_POST['title'];
+        $pdo->prepare("INSERT INTO notifications (user_id, message, type) VALUES (?, ?, 'deadline')")->execute([$assigned_to, $msg]);
         $success = "Activity created successfully!";
     } else {
         $error = "Error creating activity!";
@@ -31,14 +25,14 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_activity'])) {
 
 if(isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    mysqli_query($conn, "DELETE FROM activities WHERE activity_id=$id");
+    $pdo->prepare("DELETE FROM activities WHERE activity_id=?")->execute([$id]);
     header("Location: activities.php");
     exit();
 }
 
-$activities = mysqli_query($conn, "SELECT a.*, p.title as program_title, u.full_name as assigned_name FROM activities a LEFT JOIN programs p ON a.program_id = p.program_id LEFT JOIN users u ON a.assigned_to = u.user_id ORDER BY a.created_at DESC");
-$programs = mysqli_query($conn, "SELECT * FROM programs WHERE status='active'");
-$team_members = mysqli_query($conn, "SELECT * FROM users WHERE role='team_member' AND status='active'");
+$activities = $pdo->query("SELECT a.*, p.title as program_title, u.full_name as assigned_name FROM activities a LEFT JOIN programs p ON a.program_id = p.program_id LEFT JOIN users u ON a.assigned_to = u.user_id ORDER BY a.created_at DESC");
+$programs = $pdo->query("SELECT * FROM programs WHERE status='active'");
+$team_members = $pdo->query("SELECT * FROM users WHERE role='team_member' AND status='active'");
 ?>
 
 <!DOCTYPE html>
@@ -92,7 +86,7 @@ $team_members = mysqli_query($conn, "SELECT * FROM users WHERE role='team_member
                                 <label class="form-label fw-bold">Program</label>
                                 <select name="program_id" class="form-select" required>
                                     <option value="">Select Program</option>
-                                    <?php while($p = mysqli_fetch_assoc($programs)): ?>
+                                    <?php while($p = $programs->fetch()): ?>
                                     <option value="<?php echo $p['program_id']; ?>"><?php echo $p['title']; ?></option>
                                     <?php endwhile; ?>
                                 </select>
@@ -101,7 +95,7 @@ $team_members = mysqli_query($conn, "SELECT * FROM users WHERE role='team_member
                                 <label class="form-label fw-bold">Assign To</label>
                                 <select name="assigned_to" class="form-select" required>
                                     <option value="">Select Team Member</option>
-                                    <?php while($tm = mysqli_fetch_assoc($team_members)): ?>
+                                    <?php while($tm = $team_members->fetch()): ?>
                                     <option value="<?php echo $tm['user_id']; ?>"><?php echo $tm['full_name']; ?></option>
                                     <?php endwhile; ?>
                                 </select>
@@ -142,7 +136,7 @@ $team_members = mysqli_query($conn, "SELECT * FROM users WHERE role='team_member
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($activity = mysqli_fetch_assoc($activities)): ?>
+                            <?php while($activity = $activities->fetch()): ?>
                             <tr>
                                 <td><?php echo $activity['title']; ?></td>
                                 <td><?php echo $activity['program_title']; ?></td>

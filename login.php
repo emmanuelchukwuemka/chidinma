@@ -10,23 +10,16 @@ if(isset($_SESSION['user_id'])) {
 $error = '';
 
 if($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $password = $_POST['password'];
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ? AND status = 'active'");
+    $stmt->execute([$_POST['email']]);
+    $user = $stmt->fetch();
 
-    $query = "SELECT * FROM users WHERE email = '$email' AND status = 'active'";
-    $result = mysqli_query($conn, $query);
-
-    if($result && mysqli_num_rows($result) == 1) {
-        $user = mysqli_fetch_assoc($result);
-        if(password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['full_name'] = $user['full_name'];
-            $_SESSION['role'] = $user['role'];
-            header("Location: dashboard.php");
-            exit();
-        } else {
-            $error = "Invalid email or password. Please try again.";
-        }
+    if($user && password_verify($_POST['password'], $user['password'])) {
+        $_SESSION['user_id'] = $user['user_id'];
+        $_SESSION['full_name'] = $user['full_name'];
+        $_SESSION['role'] = $user['role'];
+        header("Location: dashboard.php");
+        exit();
     } else {
         $error = "Invalid email or password. Please try again.";
     }
@@ -65,7 +58,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <span class="input-group-text bg-success text-white">
                         <i class="fas fa-envelope"></i>
                     </span>
-                    <input type="email" name="email" class="form-control" 
+                    <input type="email" name="email" class="form-control"
                            placeholder="Enter your email" required>
                 </div>
             </div>
@@ -75,7 +68,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <span class="input-group-text bg-success text-white">
                         <i class="fas fa-lock"></i>
                     </span>
-                    <input type="password" name="password" class="form-control" 
+                    <input type="password" name="password" class="form-control"
                            placeholder="Enter your password" required>
                 </div>
             </div>

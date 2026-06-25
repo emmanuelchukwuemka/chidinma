@@ -13,19 +13,24 @@ $full_name = $_SESSION['full_name'];
 
 if(isset($_GET['read'])) {
     $id = (int)$_GET['read'];
-    mysqli_query($conn, "UPDATE notifications SET is_read=1 WHERE notification_id=$id AND user_id=$user_id");
+    $pdo->prepare("UPDATE notifications SET is_read=1 WHERE notification_id=? AND user_id=?")->execute([$id, $user_id]);
     header("Location: notifications.php");
     exit();
 }
 
 if(isset($_GET['read_all'])) {
-    mysqli_query($conn, "UPDATE notifications SET is_read=1 WHERE user_id=$user_id");
+    $pdo->prepare("UPDATE notifications SET is_read=1 WHERE user_id=?")->execute([$user_id]);
     header("Location: notifications.php");
     exit();
 }
 
-$notifications = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id=$user_id ORDER BY created_at DESC");
-$unread_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM notifications WHERE user_id=$user_id AND is_read=0"))['total'];
+$stmt = $pdo->prepare("SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC");
+$stmt->execute([$user_id]);
+$notifications = $stmt->fetchAll();
+
+$unread_stmt = $pdo->prepare("SELECT COUNT(*) as total FROM notifications WHERE user_id=? AND is_read=0");
+$unread_stmt->execute([$user_id]);
+$unread_count = $unread_stmt->fetch()['total'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -72,7 +77,7 @@ $unread_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
             <a href="reports.php"><i class="fas fa-chart-bar me-2"></i>Reports</a>
             <?php endif; ?>
             <?php if($role == 'supervisor'): ?>
-            <a href="evaluations.php"><i class="fas fa-clipboard-check me-2"></i>Evaluations</a>
+            <a href="evaluation.php"><i class="fas fa-clipboard-check me-2"></i>Evaluations</a>
             <?php endif; ?>
             <?php if($role == 'team_member'): ?>
             <a href="my_activities.php"><i class="fas fa-tasks me-2"></i>My Activities</a>
@@ -94,8 +99,8 @@ $unread_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                 </a>
                 <?php endif; ?>
             </div>
-            <?php if(mysqli_num_rows($notifications) > 0): ?>
-                <?php while($notif = mysqli_fetch_assoc($notifications)): ?>
+            <?php if(count($notifications) > 0): ?>
+                <?php foreach($notifications as $notif): ?>
                 <div class="notification-item <?php echo $notif['is_read'] == 0 ? 'unread' : ''; ?>">
                     <div class="d-flex justify-content-between">
                         <div>
@@ -110,7 +115,7 @@ $unread_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total
                         </div>
                     </div>
                 </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             <?php else: ?>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>No notifications found.

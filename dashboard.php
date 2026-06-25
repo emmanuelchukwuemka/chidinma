@@ -11,15 +11,13 @@ $role = $_SESSION['role'];
 $user_id = $_SESSION['user_id'];
 $full_name = $_SESSION['full_name'];
 
-// Get statistics
-$total_programs = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM programs"))['total'];
-$total_activities = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM activities"))['total'];
-$completed_activities = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM activities WHERE status='completed'"))['total'];
-$pending_evaluations = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM evaluations"))['total'];
-$total_users = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM users"))['total'];
+$total_programs = $pdo->query("SELECT COUNT(*) as total FROM programs")->fetch()['total'];
+$total_activities = $pdo->query("SELECT COUNT(*) as total FROM activities")->fetch()['total'];
+$completed_activities = $pdo->query("SELECT COUNT(*) as total FROM activities WHERE status='completed'")->fetch()['total'];
+$pending_evaluations = $pdo->query("SELECT COUNT(*) as total FROM evaluations")->fetch()['total'];
+$total_users = $pdo->query("SELECT COUNT(*) as total FROM users")->fetch()['total'];
 
-// Get recent programs
-$programs = mysqli_query($conn, "SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id = u.user_id ORDER BY p.created_at DESC LIMIT 5");
+$programs = $pdo->query("SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id = u.user_id ORDER BY p.created_at DESC LIMIT 5");
 ?>
 
 <!DOCTYPE html>
@@ -132,7 +130,7 @@ $programs = mysqli_query($conn, "SELECT p.*, u.full_name as manager_name FROM pr
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($program = mysqli_fetch_assoc($programs)): ?>
+                            <?php while($program = $programs->fetch()): ?>
                             <tr>
                                 <td><?php echo $program['title']; ?></td>
                                 <td><?php echo $program['manager_name']; ?></td>

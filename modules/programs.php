@@ -12,30 +12,23 @@ $error = '';
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 
-// Add program
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_program'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $description = mysqli_real_escape_string($conn, $_POST['description']);
-    $start_date = $_POST['start_date'];
-    $end_date = $_POST['end_date'];
-
-    $query = "INSERT INTO programs (title, description, start_date, end_date, manager_id) VALUES ('$title', '$description', '$start_date', '$end_date', '$user_id')";
-    if(mysqli_query($conn, $query)) {
+    $stmt = $pdo->prepare("INSERT INTO programs (title, description, start_date, end_date, manager_id) VALUES (?, ?, ?, ?, ?)");
+    if($stmt->execute([$_POST['title'], $_POST['description'], $_POST['start_date'], $_POST['end_date'], $user_id])) {
         $success = "Program created successfully!";
     } else {
         $error = "Error creating program!";
     }
 }
 
-// Delete program
 if(isset($_GET['delete'])) {
-    $id = intval($_GET['delete']);
-    mysqli_query($conn, "DELETE FROM programs WHERE program_id=$id");
+    $id = (int)$_GET['delete'];
+    $pdo->prepare("DELETE FROM programs WHERE program_id=?")->execute([$id]);
     header("Location: programs.php");
     exit();
 }
 
-$programs = mysqli_query($conn, "SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id = u.user_id ORDER BY p.created_at DESC");
+$programs = $pdo->query("SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id = u.user_id ORDER BY p.created_at DESC");
 ?>
 
 <!DOCTYPE html>
@@ -125,7 +118,7 @@ $programs = mysqli_query($conn, "SELECT p.*, u.full_name as manager_name FROM pr
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($program = mysqli_fetch_assoc($programs)): ?>
+                            <?php while($program = $programs->fetch()): ?>
                             <tr>
                                 <td><?php echo $program['title']; ?></td>
                                 <td><?php echo $program['manager_name']; ?></td>

@@ -12,12 +12,8 @@ $error = '';
 $role = $_SESSION['role'];
 
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_milestone'])) {
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $program_id = (int)$_POST['program_id'];
-    $target_date = $_POST['target_date'];
-
-    $query = "INSERT INTO milestones (title, program_id, target_date) VALUES ('$title', '$program_id', '$target_date')";
-    if(mysqli_query($conn, $query)) {
+    $stmt = $pdo->prepare("INSERT INTO milestones (title, program_id, target_date) VALUES (?, ?, ?)");
+    if($stmt->execute([$_POST['title'], (int)$_POST['program_id'], $_POST['target_date']])) {
         $success = "Milestone added successfully!";
     } else {
         $error = "Error adding milestone!";
@@ -26,20 +22,20 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add_milestone'])) {
 
 if(isset($_GET['achieve'])) {
     $id = (int)$_GET['achieve'];
-    mysqli_query($conn, "UPDATE milestones SET status='achieved' WHERE milestone_id=$id");
+    $pdo->prepare("UPDATE milestones SET status='achieved' WHERE milestone_id=?")->execute([$id]);
     header("Location: milestones.php");
     exit();
 }
 
 if(isset($_GET['delete'])) {
     $id = (int)$_GET['delete'];
-    mysqli_query($conn, "DELETE FROM milestones WHERE milestone_id=$id");
+    $pdo->prepare("DELETE FROM milestones WHERE milestone_id=?")->execute([$id]);
     header("Location: milestones.php");
     exit();
 }
 
-$milestones = mysqli_query($conn, "SELECT m.*, p.title as program_title FROM milestones m LEFT JOIN programs p ON m.program_id = p.program_id ORDER BY m.created_at DESC");
-$programs = mysqli_query($conn, "SELECT * FROM programs WHERE status='active'");
+$milestones = $pdo->query("SELECT m.*, p.title as program_title FROM milestones m LEFT JOIN programs p ON m.program_id = p.program_id ORDER BY m.created_at DESC");
+$programs = $pdo->query("SELECT * FROM programs WHERE status='active'");
 ?>
 
 <!DOCTYPE html>
@@ -93,7 +89,7 @@ $programs = mysqli_query($conn, "SELECT * FROM programs WHERE status='active'");
                                 <label class="form-label fw-bold">Program</label>
                                 <select name="program_id" class="form-select" required>
                                     <option value="">Select Program</option>
-                                    <?php while($p = mysqli_fetch_assoc($programs)): ?>
+                                    <?php while($p = $programs->fetch()): ?>
                                     <option value="<?php echo $p['program_id']; ?>"><?php echo $p['title']; ?></option>
                                     <?php endwhile; ?>
                                 </select>
@@ -129,7 +125,7 @@ $programs = mysqli_query($conn, "SELECT * FROM programs WHERE status='active'");
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($milestone = mysqli_fetch_assoc($milestones)): ?>
+                            <?php while($milestone = $milestones->fetch()): ?>
                             <tr>
                                 <td><?php echo $milestone['title']; ?></td>
                                 <td><?php echo $milestone['program_title']; ?></td>

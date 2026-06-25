@@ -8,17 +8,19 @@ if(!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
-$success = '';
+$allowed_statuses = ['pending', 'in_progress', 'completed'];
 
 if(isset($_GET['update'])) {
     $id = (int)$_GET['update'];
-    $status = mysqli_real_escape_string($conn, $_GET['status']);
-    mysqli_query($conn, "UPDATE activities SET status='$status' WHERE activity_id=$id AND assigned_to=$user_id");
+    $status = in_array($_GET['status'], $allowed_statuses) ? $_GET['status'] : 'pending';
+    $pdo->prepare("UPDATE activities SET status=? WHERE activity_id=? AND assigned_to=?")->execute([$status, $id, $user_id]);
     header("Location: my_activities.php");
     exit();
 }
 
-$activities = mysqli_query($conn, "SELECT a.*, p.title as program_title FROM activities a LEFT JOIN programs p ON a.program_id = p.program_id WHERE a.assigned_to=$user_id ORDER BY a.deadline ASC");
+$stmt = $pdo->prepare("SELECT a.*, p.title as program_title FROM activities a LEFT JOIN programs p ON a.program_id = p.program_id WHERE a.assigned_to=? ORDER BY a.deadline ASC");
+$stmt->execute([$user_id]);
+$activities = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -59,7 +61,7 @@ $activities = mysqli_query($conn, "SELECT a.*, p.title as program_title FROM act
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($activity = mysqli_fetch_assoc($activities)): ?>
+                            <?php foreach($activities as $activity): ?>
                             <tr>
                                 <td><?php echo $activity['title']; ?></td>
                                 <td><?php echo $activity['program_title']; ?></td>
@@ -83,7 +85,7 @@ $activities = mysqli_query($conn, "SELECT a.*, p.title as program_title FROM act
                                     <?php endif; ?>
                                 </td>
                             </tr>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>

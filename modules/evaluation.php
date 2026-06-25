@@ -13,20 +13,16 @@ $role = $_SESSION['role'];
 $user_id = $_SESSION['user_id'];
 
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['submit_evaluation'])) {
-    $activity_id = (int)$_POST['activity_id'];
-    $score = (int)$_POST['score'];
-    $feedback = mysqli_real_escape_string($conn, $_POST['feedback']);
-
-    $query = "INSERT INTO evaluations (activity_id, supervisor_id, score, feedback) VALUES ('$activity_id', '$user_id', '$score', '$feedback')";
-    if(mysqli_query($conn, $query)) {
+    $stmt = $pdo->prepare("INSERT INTO evaluations (activity_id, supervisor_id, score, feedback) VALUES (?, ?, ?, ?)");
+    if($stmt->execute([(int)$_POST['activity_id'], $user_id, (int)$_POST['score'], $_POST['feedback']])) {
         $success = "Evaluation submitted successfully!";
     } else {
         $error = "Error submitting evaluation!";
     }
 }
 
-$evaluations = mysqli_query($conn, "SELECT e.*, a.title as activity_title, u.full_name as supervisor_name FROM evaluations e LEFT JOIN activities a ON e.activity_id = a.activity_id LEFT JOIN users u ON e.supervisor_id = u.user_id ORDER BY e.evaluated_at DESC");
-$activities = mysqli_query($conn, "SELECT * FROM activities WHERE status != 'completed'");
+$evaluations = $pdo->query("SELECT e.*, a.title as activity_title, u.full_name as supervisor_name FROM evaluations e LEFT JOIN activities a ON e.activity_id = a.activity_id LEFT JOIN users u ON e.supervisor_id = u.user_id ORDER BY e.evaluated_at DESC");
+$activities = $pdo->query("SELECT * FROM activities WHERE status != 'completed'");
 ?>
 
 <!DOCTYPE html>
@@ -44,7 +40,7 @@ $activities = mysqli_query($conn, "SELECT * FROM activities WHERE status != 'com
     <div class="row">
         <div class="col-md-2 sidebar py-3">
             <a href="../dashboard.php"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
-            <a href="evaluations.php" class="active"><i class="fas fa-clipboard-check me-2"></i>Evaluations</a>
+            <a href="evaluation.php" class="active"><i class="fas fa-clipboard-check me-2"></i>Evaluations</a>
             <a href="notifications.php"><i class="fas fa-bell me-2"></i>Notifications</a>
             <a href="../logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a>
         </div>
@@ -70,7 +66,7 @@ $activities = mysqli_query($conn, "SELECT * FROM activities WHERE status != 'com
                                 <label class="form-label fw-bold">Select Activity</label>
                                 <select name="activity_id" class="form-select" required>
                                     <option value="">Select Activity</option>
-                                    <?php while($a = mysqli_fetch_assoc($activities)): ?>
+                                    <?php while($a = $activities->fetch()): ?>
                                     <option value="<?php echo $a['activity_id']; ?>"><?php echo $a['title']; ?></option>
                                     <?php endwhile; ?>
                                 </select>
@@ -110,7 +106,7 @@ $activities = mysqli_query($conn, "SELECT * FROM activities WHERE status != 'com
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while($eval = mysqli_fetch_assoc($evaluations)): ?>
+                            <?php while($eval = $evaluations->fetch()): ?>
                             <tr>
                                 <td><?php echo $eval['activity_title']; ?></td>
                                 <td><?php echo $eval['supervisor_name']; ?></td>

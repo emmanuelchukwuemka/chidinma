@@ -8,25 +8,49 @@ if(!isset($_SESSION['user_id'])) {
 }
 
 $role = $_SESSION['role'];
-$user_id = $_SESSION['user_id'];
 
-$programs = mysqli_query($conn, "SELECT * FROM programs");
+$programs = $pdo->query("SELECT * FROM programs")->fetchAll();
 $selected_program = null;
-$activities = null;
-$milestones = null;
-$evaluations = null;
+$activities = [];
+$milestones = [];
+$evaluations = [];
+$total_activities = $completed_activities = $total_milestones = $achieved_milestones = $progress = 0;
 
 if(isset($_GET['program_id'])) {
     $pid = (int)$_GET['program_id'];
-    $selected_program = mysqli_fetch_assoc(mysqli_query($conn, "SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id=u.user_id WHERE p.program_id=$pid"));
-    $activities = mysqli_query($conn, "SELECT a.*, u.full_name as assigned_name FROM activities a LEFT JOIN users u ON a.assigned_to=u.user_id WHERE a.program_id=$pid");
-    $milestones = mysqli_query($conn, "SELECT * FROM milestones WHERE program_id=$pid");
-    $evaluations = mysqli_query($conn, "SELECT e.*, a.title as activity_title, u.full_name as supervisor_name FROM evaluations e LEFT JOIN activities a ON e.activity_id=a.activity_id LEFT JOIN users u ON e.supervisor_id=u.user_id WHERE a.program_id=$pid");
 
-    $total_activities = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM activities WHERE program_id=$pid"))['total'];
-    $completed_activities = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM activities WHERE program_id=$pid AND status='completed'"))['total'];
-    $total_milestones = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM milestones WHERE program_id=$pid"))['total'];
-    $achieved_milestones = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as total FROM milestones WHERE program_id=$pid AND status='achieved'"))['total'];
+    $stmt = $pdo->prepare("SELECT p.*, u.full_name as manager_name FROM programs p LEFT JOIN users u ON p.manager_id=u.user_id WHERE p.program_id=?");
+    $stmt->execute([$pid]);
+    $selected_program = $stmt->fetch();
+
+    $stmt = $pdo->prepare("SELECT a.*, u.full_name as assigned_name FROM activities a LEFT JOIN users u ON a.assigned_to=u.user_id WHERE a.program_id=?");
+    $stmt->execute([$pid]);
+    $activities = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT * FROM milestones WHERE program_id=?");
+    $stmt->execute([$pid]);
+    $milestones = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT e.*, a.title as activity_title, u.full_name as supervisor_name FROM evaluations e LEFT JOIN activities a ON e.activity_id=a.activity_id LEFT JOIN users u ON e.supervisor_id=u.user_id WHERE a.program_id=?");
+    $stmt->execute([$pid]);
+    $evaluations = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM activities WHERE program_id=?");
+    $stmt->execute([$pid]);
+    $total_activities = $stmt->fetch()['total'];
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM activities WHERE program_id=? AND status='completed'");
+    $stmt->execute([$pid]);
+    $completed_activities = $stmt->fetch()['total'];
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM milestones WHERE program_id=?");
+    $stmt->execute([$pid]);
+    $total_milestones = $stmt->fetch()['total'];
+
+    $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM milestones WHERE program_id=? AND status='achieved'");
+    $stmt->execute([$pid]);
+    $achieved_milestones = $stmt->fetch()['total'];
+
     $progress = $total_activities > 0 ? round(($completed_activities / $total_activities) * 100) : 0;
 }
 ?>
@@ -59,7 +83,6 @@ if(isset($_GET['program_id'])) {
         <div class="col-md-10 main-content">
             <h4 class="mb-4"><i class="fas fa-chart-bar me-2 text-success"></i>Program Reports</h4>
 
-            <!-- Select Program -->
             <div class="card mb-4">
                 <div class="card-header bg-success text-white">
                     <i class="fas fa-search me-2"></i>Select Program to Generate Report
@@ -70,11 +93,11 @@ if(isset($_GET['program_id'])) {
                             <div class="col-md-8">
                                 <select name="program_id" class="form-select" required>
                                     <option value="">Select a Program</option>
-                                    <?php while($p = mysqli_fetch_assoc($programs)): ?>
+                                    <?php foreach($programs as $p): ?>
                                     <option value="<?php echo $p['program_id']; ?>" <?php echo isset($_GET['program_id']) && $_GET['program_id'] == $p['program_id'] ? 'selected' : ''; ?>>
                                         <?php echo $p['title']; ?>
                                     </option>
-                                    <?php endwhile; ?>
+                                    <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -88,7 +111,6 @@ if(isset($_GET['program_id'])) {
             </div>
 
             <?php if($selected_program): ?>
-            <!-- Report Output -->
             <div id="reportContent">
                 <div class="card mb-4">
                     <div class="card-header bg-success text-white d-flex justify-content-between">
@@ -98,7 +120,6 @@ if(isset($_GET['program_id'])) {
                         </button>
                     </div>
                     <div class="card-body">
-                        <!-- Program Info -->
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <p><strong>Program Title:</strong> <?php echo $selected_program['title']; ?></p>
@@ -112,7 +133,6 @@ if(isset($_GET['program_id'])) {
                             </div>
                         </div>
 
-                        <!-- Progress Summary -->
                         <div class="row mb-4">
                             <div class="col-md-3">
                                 <div class="stat-card bg-stat-1">
@@ -140,7 +160,6 @@ if(isset($_GET['program_id'])) {
                             </div>
                         </div>
 
-                        <!-- Progress Bar -->
                         <div class="mb-4">
                             <h6 class="fw-bold">Overall Progress: <?php echo $progress; ?>%</h6>
                             <div class="progress">
@@ -148,64 +167,46 @@ if(isset($_GET['program_id'])) {
                             </div>
                         </div>
 
-                        <!-- Activities Table -->
                         <h6 class="fw-bold mb-3">Activities</h6>
                         <table class="table table-bordered mb-4">
                             <thead>
-                                <tr>
-                                    <th>Activity</th>
-                                    <th>Assigned To</th>
-                                    <th>Deadline</th>
-                                    <th>Status</th>
-                                </tr>
+                                <tr><th>Activity</th><th>Assigned To</th><th>Deadline</th><th>Status</th></tr>
                             </thead>
                             <tbody>
-                                <?php while($a = mysqli_fetch_assoc($activities)): ?>
+                                <?php foreach($activities as $a): ?>
                                 <tr>
                                     <td><?php echo $a['title']; ?></td>
                                     <td><?php echo $a['assigned_name']; ?></td>
                                     <td><?php echo $a['deadline']; ?></td>
                                     <td><?php echo ucfirst(str_replace('_', ' ', $a['status'])); ?></td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
 
-                        <!-- Milestones Table -->
                         <h6 class="fw-bold mb-3">Milestones</h6>
                         <table class="table table-bordered mb-4">
                             <thead>
-                                <tr>
-                                    <th>Milestone</th>
-                                    <th>Target Date</th>
-                                    <th>Status</th>
-                                </tr>
+                                <tr><th>Milestone</th><th>Target Date</th><th>Status</th></tr>
                             </thead>
                             <tbody>
-                                <?php while($m = mysqli_fetch_assoc($milestones)): ?>
+                                <?php foreach($milestones as $m): ?>
                                 <tr>
                                     <td><?php echo $m['title']; ?></td>
                                     <td><?php echo $m['target_date']; ?></td>
                                     <td><?php echo ucfirst(str_replace('_', ' ', $m['status'])); ?></td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
 
-                        <!-- Evaluations Table -->
                         <h6 class="fw-bold mb-3">Evaluations</h6>
                         <table class="table table-bordered">
                             <thead>
-                                <tr>
-                                    <th>Activity</th>
-                                    <th>Supervisor</th>
-                                    <th>Score</th>
-                                    <th>Feedback</th>
-                                    <th>Date</th>
-                                </tr>
+                                <tr><th>Activity</th><th>Supervisor</th><th>Score</th><th>Feedback</th><th>Date</th></tr>
                             </thead>
                             <tbody>
-                                <?php while($e = mysqli_fetch_assoc($evaluations)): ?>
+                                <?php foreach($evaluations as $e): ?>
                                 <tr>
                                     <td><?php echo $e['activity_title']; ?></td>
                                     <td><?php echo $e['supervisor_name']; ?></td>
@@ -213,7 +214,7 @@ if(isset($_GET['program_id'])) {
                                     <td><?php echo $e['feedback']; ?></td>
                                     <td><?php echo date('d M Y', strtotime($e['evaluated_at'])); ?></td>
                                 </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
