@@ -75,11 +75,11 @@ function _initDb(PDO $pdo): void
 
     $count = (int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
     if ($count === 0) {
-        $hash = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
-        $stmt = $pdo->prepare('INSERT INTO users (full_name, email, password, role) VALUES (?, ?, ?, ?)');
-        $stmt->execute(['Admin User',     'admin@outreach.com',      $hash, 'admin']);
-        $stmt->execute(['Maria Manager',  'manager@outreach.com',    $hash, 'manager']);
-        $stmt->execute(['Sam Supervisor', 'supervisor@outreach.com', $hash, 'supervisor']);
-        $stmt->execute(['Tom Member',     'member@outreach.com',     $hash, 'team_member']);
+        $hash = password_hash('password', PASSWORD_BCRYPT);
+        $stmt = $pdo->prepare('INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute(['Admin User',     'admin@outreach.com',      $hash, 'admin',       'active']);
+        $stmt->execute(['Maria Manager',  'manager@outreach.com',    $hash, 'manager',     'active']);
+        $stmt->execute(['Sam Supervisor', 'supervisor@outreach.com', $hash, 'supervisor',  'active']);
+        $stmt->execute(['Tom Member',     'member@outreach.com',     $hash, 'team_member', 'active']);
     }
 }
